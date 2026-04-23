@@ -16,7 +16,7 @@ from lynx_investor_core import (
     __year__,
 )
 
-__version__ = "5.0"
+__version__ = "5.1"
 APP_NAME = "Lynx Dashboard"
 APP_SHORT_NAME = "Dashboard"
 APP_TAGLINE = "Unified Launcher & Command Center"
