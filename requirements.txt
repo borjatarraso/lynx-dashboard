@@ -1,0 +1,5 @@
+rich>=13.7
+textual>=0.60
+# Optional — enables the Yahoo Finance company → agent lookup in the recommender.
+# Without it the dashboard falls back to an offline ticker hint table.
+yfinance>=0.2.40

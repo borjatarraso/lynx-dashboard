@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "lynx-dashboard"
+version         = "4.0"
+description     = "Lynx Dashboard — Unified launcher and command center for the Lince Investor Suite"
+readme          = "README.md"
+requires-python = ">=3.10"
+license         = {text = "BSD-3-Clause"}
+authors         = [{name = "Borja Tarraso", email = "borja.tarraso@member.fsf.org"}]
+dependencies    = [
+    "lynx-investor-core>=4.0",
+    "rich>=13.7",
+    "textual>=0.60",
+]
+
+[project.optional-dependencies]
+recommender = ["yfinance>=0.2.40"]
+
+[project.scripts]
+lynx-dashboard = "lynx_dashboard.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["lynx_dashboard*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
