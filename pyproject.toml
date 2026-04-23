@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name            = "lynx-dashboard"
-version = "5.3"
+version = "5.4"
 description     = "Lynx Dashboard — Unified launcher and command center for the Lince Investor Suite"
 readme          = "README.md"
 requires-python = ">=3.10"
@@ -25,7 +25,7 @@ classifiers     = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies    = [
-    "lynx-investor-core>=5.3",
+    "lynx-investor-core>=5.4",
     "rich>=13.7",
     "textual>=0.60",
     "argcomplete>=3.0",
