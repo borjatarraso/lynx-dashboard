@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 """Entry point for lynx-dashboard.
 
 Propagates ``run_cli()``'s return code to the process exit status so shell

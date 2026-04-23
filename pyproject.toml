@@ -4,20 +4,41 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name            = "lynx-dashboard"
-version = "5.1"
+version = "5.2"
 description     = "Lynx Dashboard — Unified launcher and command center for the Lince Investor Suite"
 readme          = "README.md"
 requires-python = ">=3.10"
 license         = {text = "BSD-3-Clause"}
 authors         = [{name = "Borja Tarraso", email = "borja.tarraso@member.fsf.org"}]
+keywords        = ["finance", "investing", "dashboard", "launcher"]
+classifiers     = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies    = [
-    "lynx-investor-core>=5.1",
+    "lynx-investor-core>=5.2",
     "rich>=13.7",
     "textual>=0.60",
+    "argcomplete>=3.0",
 ]
 
 [project.optional-dependencies]
 recommender = ["yfinance>=0.2.40"]
+
+[project.urls]
+Homepage   = "https://github.com/borjatarraso/lynx-dashboard"
+Repository = "https://github.com/borjatarraso/lynx-dashboard"
+Issues     = "https://github.com/borjatarraso/lynx-dashboard/issues"
+Changelog  = "https://github.com/borjatarraso/lynx-dashboard/blob/main/CHANGELOG.md"
 
 [project.scripts]
 lynx-dashboard = "lynx_dashboard.__main__:main"

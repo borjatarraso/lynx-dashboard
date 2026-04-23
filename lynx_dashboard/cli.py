@@ -324,6 +324,13 @@ def _splash_suppressed(args: argparse.Namespace) -> bool:
 
 def run_cli(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
+
+    try:
+        import argcomplete
+        argcomplete.autocomplete(parser)
+    except ImportError:
+        pass  # argcomplete optional at runtime
+
     args = parser.parse_args(argv)
 
     # --debug / --verbose is a synonym for LYNX_DEBUG=1 — flips off the
