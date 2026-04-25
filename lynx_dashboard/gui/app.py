@@ -1478,4 +1478,11 @@ def run_gui(
 
         run_gui_splash(parent_root=app, on_done=_reveal_dashboard)
 
+    # Bottom-right language toggle (US/ES/IT/DE/FR/FA).
+    try:
+        from lynx_investor_core.lang_widget import mount_tk_language_button
+        mount_tk_language_button(app)
+    except Exception:
+        pass
+
     app.mainloop()
