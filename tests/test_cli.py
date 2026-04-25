@@ -103,10 +103,15 @@ def test_list_json_is_valid_and_non_empty():
     assert rc == 0
     payload = _json.loads(out)
     assert isinstance(payload, list)
-    # One row per app + agent (3 + 11).
-    assert len(payload) == 14
+    # One row per app + agent (8 apps + 11 agents).
+    assert len(payload) == 19
     commands = {x["command"] for x in payload}
     assert "lynx-fundamental" in commands
+    assert "lynx-etf" in commands
+    assert "lynx-compare-etf" in commands
+    assert "lynx-fund" in commands
+    assert "lynx-compare-fund" in commands
+    assert "lynx-theme" in commands
     assert "lynx-energy" in commands
 
 

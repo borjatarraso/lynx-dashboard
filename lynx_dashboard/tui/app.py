@@ -466,6 +466,8 @@ class DashboardApp(PagingAppMixin, App):
         Binding("f", "launch_key('f')", show=False),
         Binding("c", "launch_key('c')", show=False),
         Binding("p", "launch_key('p')", show=False),
+        Binding("e", "launch_key('e')", show=False),
+        Binding("shift+e", "launch_key('E')", show=False),
         Binding("1", "launch_key('1')", show=False),
         Binding("2", "launch_key('2')", show=False),
         Binding("3", "launch_key('3')", show=False),
@@ -571,11 +573,13 @@ class DashboardApp(PagingAppMixin, App):
         yield Footer()
 
     def _build_table(self, table_id: str, items) -> DataTable:
+        from lynx_dashboard.icons import icon_glyph
         table = DataTable(id=table_id, zebra_stripes=True, cursor_type="row")
-        table.add_columns("Key", "Name", "What it does", "Command")
+        table.add_columns("Key", "Icon", "Name", "What it does", "Command")
         for item in items:
             table.add_row(
                 _display_key(item.keybinding),
+                icon_glyph(item.command),
                 f"[bold {item.color}]{item.name}[/]",
                 item.tagline,
                 item.command,

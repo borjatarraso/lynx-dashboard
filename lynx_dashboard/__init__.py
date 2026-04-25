@@ -16,7 +16,7 @@ from lynx_investor_core import (
     __year__,
 )
 
-__version__ = "5.5.1"
+__version__ = "6.0.0"
 APP_NAME = "Lynx Dashboard"
 APP_SHORT_NAME = "Dashboard"
 APP_TAGLINE = "Unified Launcher & Command Center"
@@ -29,7 +29,7 @@ DESCRIPTION = (
     "It showcases every app and every sector-specialized agent, suggests the "
     "right agent for any company you type in, and launches any of them in the "
     "same interface mode you used to enter the dashboard.\n\n"
-    "Apps: lynx-fundamental, lynx-compare, lynx-portfolio.\n"
+    "Apps: lynx-fundamental, lynx-compare, lynx-portfolio, lynx-etf, lynx-compare-etf.\n"
     "Agents: 11 sector-specialized lynx-investor-* agents covering the entire "
     "GICS universe — from basic materials to utilities.\n\n"
     "Modes: console, interactive, Textual TUI, Tkinter GUI."

@@ -17,10 +17,19 @@ from lynx_dashboard.registry import (
 )
 
 
-def test_three_core_apps():
-    assert len(APPS) == 3
+def test_core_apps():
+    assert len(APPS) == 8
     commands = {a.command for a in APPS}
-    assert commands == {"lynx-fundamental", "lynx-compare", "lynx-portfolio"}
+    assert commands == {
+        "lynx-fundamental",
+        "lynx-compare",
+        "lynx-portfolio",
+        "lynx-etf",
+        "lynx-compare-etf",
+        "lynx-fund",
+        "lynx-compare-fund",
+        "lynx-theme",
+    }
 
 
 def test_eleven_sector_agents():
@@ -92,8 +101,17 @@ def test_apps_and_agents_kind_consistency():
 
 
 def test_mode_filters_return_all_for_standard_modes():
-    for mode in ("console", "interactive", "tui", "gui"):
-        assert apps_for_mode(mode) == APPS
+    # lynx-theme is GUI/TUI-only by design — it disappears from the
+    # console / interactive lists, but every other app and agent works
+    # in every mode.
+    gui_tui_only = {"lynx-theme"}
+    full_app_set = APPS
+    for mode in ("tui", "gui"):
+        assert apps_for_mode(mode) == full_app_set
+        assert agents_for_mode(mode) == AGENTS
+    for mode in ("console", "interactive"):
+        filtered = tuple(a for a in APPS if a.command not in gui_tui_only)
+        assert apps_for_mode(mode) == filtered
         assert agents_for_mode(mode) == AGENTS
 
 

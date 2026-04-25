@@ -75,29 +75,38 @@ class LaunchResult:
 # ---------------------------------------------------------------------------
 
 def build_command(request: LaunchRequest) -> Tuple[str, ...]:
-    """Build the argv tuple the launcher will execute for *request*."""
-    exe = resolve_executable(request.target)
+    """Build the argv tuple the launcher will execute for *request*.
+
+    The flag dialect is per-app: most Suite tools take ``-p`` / ``-t``,
+    lynx-portfolio takes ``--production`` / ``--devel``, and lynx-theme
+    has no run-mode concept at all. Same story for the UI-mode flag —
+    lynx-portfolio's console flag is ``-c`` rather than the default
+    "no flag at all". The launcher consults
+    :meth:`Launchable.run_mode_flag` and :meth:`Launchable.ui_flag_for`
+    so each app gets the argv it actually understands.
+    """
+    target = request.target
+    exe = resolve_executable(target)
     cmd: List[str] = list(exe)
 
-    # Run mode is required by every suite agent.
-    if request.run_mode == "testing":
-        cmd.append("-t")
-    else:
-        cmd.append("-p")
+    # Run-mode flag (production / testing) — only when the app supports it.
+    rm_flag = target.run_mode_flag(request.run_mode)
+    if rm_flag:
+        cmd.append(rm_flag)
 
-    # UI mode flag.
-    flag = mode_to_flag(request.mode)
-    if flag:
-        cmd.append(flag)
+    # UI mode flag — let the target decide.
+    ui_flag = target.ui_flag_for(request.mode)
+    if ui_flag:
+        cmd.append(ui_flag)
 
     if request.refresh:
         cmd.append("--refresh")
 
-    # Ticker (or comparison pair). Many apps accept a positional identifier;
-    # passing a blank string is a no-op on most, so we guard against it.
-    if request.ticker:
-        # lynx-compare takes TWO positional tickers separated by space. We
-        # pass them as separate argv entries.
+    # Positional identifier (ticker / comparison pair) — only if the
+    # target accepts one and the user supplied something.
+    if request.ticker and target.accepts_identifier:
+        # lynx-compare etc. take TWO positional tickers separated by
+        # space; pass them as separate argv entries.
         parts = [p for p in request.ticker.split() if p]
         cmd.extend(parts)
 

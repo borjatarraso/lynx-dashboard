@@ -51,6 +51,23 @@ class Launchable:
     example_tickers: Tuple[str, ...] = ()   # example tickers the user can try
     color: str = "cyan"                     # Rich style color used in panels/buttons
 
+    # ── Launch-flag dialect ────────────────────────────────────────────
+    # How does this app spell its run-mode (production/testing) flags?
+    #   "p_t"             — default Suite vocabulary: -p / -t
+    #   "production_devel"— lynx-portfolio uses --production / --devel
+    #   "none"            — app has no run-mode concept (e.g. lynx-theme)
+    run_mode_dialect: str = "p_t"
+
+    # Per-app override of UI-mode → CLI flag. When None, the launcher
+    # falls back to its built-in defaults (-i / -tui / -x / no flag for
+    # console). lynx-portfolio uses ``-c`` for console, so it overrides.
+    ui_mode_flags: Optional[Tuple[Tuple[str, str], ...]] = None
+
+    # Whether this app accepts a positional identifier (ticker / file).
+    # lynx-theme and lynx-portfolio don't take a ticker, so the launcher
+    # must not append one.
+    accepts_identifier: bool = True
+
     # Extended detail shown in the Info dialog.
     details: str = ""                       # multi-paragraph deeper description
     data_sources: Tuple[str, ...] = ()      # what data sources / APIs are used
@@ -66,6 +83,31 @@ class Launchable:
 
     def supports(self, mode: str) -> bool:
         return mode in self.modes
+
+    def ui_flag_for(self, mode: str) -> Optional[str]:
+        """Return the CLI flag this app uses for *mode*, or None for default."""
+        if self.ui_mode_flags is not None:
+            for m, f in self.ui_mode_flags:
+                if m == mode:
+                    return f or None
+            return None
+        # Default Suite mapping.
+        return {
+            "console": None,
+            "interactive": "-i",
+            "tui": "-tui",
+            "gui": "-x",
+            "search": "-s",
+        }.get(mode)
+
+    def run_mode_flag(self, run_mode: str) -> Optional[str]:
+        """Return the CLI flag for *run_mode* ('production' / 'testing')."""
+        if self.run_mode_dialect == "none":
+            return None
+        if self.run_mode_dialect == "production_devel":
+            return "--production" if run_mode == "production" else "--devel"
+        # Default: -p / -t
+        return "-p" if run_mode == "production" else "-t"
 
 
 _ALL_MODES = frozenset({"console", "interactive", "tui", "gui"})
@@ -163,6 +205,15 @@ APPS: Tuple[Launchable, ...] = (
         keybinding="p",
         example_tickers=(),
         color="green",
+        # lynx-portfolio uses --production / --devel and -c / -i / -tui / -x.
+        run_mode_dialect="production_devel",
+        ui_mode_flags=(
+            ("console", "-c"),
+            ("interactive", "-i"),
+            ("tui", "-tui"),
+            ("gui", "-x"),
+        ),
+        accepts_identifier=False,
         details=(
             "Tracks a real multi-currency portfolio with live quotes, "
             "automatic EUR/USD conversion via ECB FX rates, and a locally-"
@@ -176,6 +227,191 @@ APPS: Tuple[Launchable, ...] = (
             "yfinance — live quotes and historical prices",
             "ECB — daily reference FX rates",
             "Local encrypted vault — positions, lots, transactions",
+        ),
+    ),
+    Launchable(
+        name="Lynx ETF",
+        short_name="ETF",
+        kind=LaunchableKind.APP,
+        command="lynx-etf",
+        package="lynx_etf",
+        tagline="Exchange-Traded Fund analysis: costs, holdings, allocation, risk",
+        description=(
+            "ETF-specialist tool — rejects stocks, mutual funds, and index "
+            "funds at the resolver level. Analyses expense ratio, AUM, top "
+            "holdings, sector/geography allocation, performance, tracking "
+            "error, volatility, and drawdown. Produces a verdict with "
+            "per-category scores."
+        ),
+        category="Core",
+        modes=_ALL_MODES,
+        keybinding="e",
+        example_tickers=("SPY", "QQQ", "VTI", "IE00B4L5Y983"),
+        color="cyan",
+        details=(
+            "Scope is strictly Exchange-Traded Funds. Any non-ETF instrument "
+            "(stock, mutual fund, closed-end fund, index) is rejected with a "
+            "clear error at resolution time.\n\n"
+            "Fetches fund-level info (AUM, expense ratio, fund family, "
+            "domicile, inception date), 10 years of price history, top "
+            "holdings, and sector/geography/currency allocation. Computes "
+            "returns across 1M/3M/YTD/1Y/3Y/5Y/10Y windows, Sharpe, Sortino, "
+            "volatility, max drawdown, tracking error, and tracking "
+            "difference. Scores the fund 0-100 across Costs, Liquidity, "
+            "Performance, Diversification, and Risk."
+        ),
+        data_sources=(
+            "yfinance — ETF prices, holdings, allocation, fund metadata",
+            "ISIN lookup via yfinance Search (UCITS ETFs by ISIN)",
+            "Yahoo Finance + Google News RSS — fund-level news",
+        ),
+    ),
+    Launchable(
+        name="Lynx Compare ETF",
+        short_name="Compare ETF",
+        kind=LaunchableKind.APP,
+        command="lynx-compare-etf",
+        package="lynx_compare_etf",
+        tagline="Side-by-side ETF comparison with winner per section",
+        description=(
+            "Compares two ETFs head-to-head across seven sections: Costs, "
+            "Income, Size & Liquidity, Performance, Diversification, Risk, "
+            "and Tracking. Declares a winner for every section plus an "
+            "overall winner. Warns on asset-class, domicile, replication, "
+            "or size-tier mismatches."
+        ),
+        category="Core",
+        modes=_ALL_MODES,
+        keybinding="E",
+        example_tickers=("VTI ITOT", "VOO IVV", "QQQ SPY"),
+        color="magenta",
+        details=(
+            "Takes two ETF tickers (or ISINs) and runs the lynx-etf pipeline "
+            "on both, then diffs every metric and every section to declare "
+            "winners. Ties are broken first by metric-wins tally, then "
+            "declared a tie if still equal.\n\n"
+            "Shows bid-ask spread, expense ratio, AUM, yield, returns, "
+            "Sharpe/Sortino, holdings count, top-10 concentration, sector "
+            "HHI, volatility, max drawdown, beta, tracking error, and "
+            "R². Computes approximate holdings overlap across the two "
+            "funds. Ships with a Flask REST API "
+            "(lynx-compare-etf-server) for integration."
+        ),
+        data_sources=(
+            "yfinance via lynx-etf — prices, statements, holdings",
+            "lynx-etf cache — reuses analyses from the ETF tool",
+        ),
+    ),
+    Launchable(
+        name="Lynx Fund",
+        short_name="Fund",
+        kind=LaunchableKind.APP,
+        command="lynx-fund",
+        package="lynx_fund",
+        tagline="Mutual / index fund analysis: share classes, fees, manager, tax drag",
+        description=(
+            "Fund-specialist tool — rejects stocks and ETFs at the "
+            "resolver level. Analyses share-class TER and load schedule, "
+            "12b-1 fees, manager tenure, persistence, capital-gains tax "
+            "drag, soft-/hard-close status, swing pricing, and minimum "
+            "investment. Produces a verdict with per-category scores."
+        ),
+        category="Core",
+        modes=_ALL_MODES,
+        keybinding="m",
+        example_tickers=("VFIAX", "FXAIX", "VTSAX", "SWPPX"),
+        color="green",
+        details=(
+            "Scope is strictly traditional mutual / index funds. ETFs, "
+            "stocks, closed-end funds, ETNs and bare indexes are rejected "
+            "at resolution time with a friendly redirect to the right "
+            "Suite tool.\n\n"
+            "Surfaces share-class differences (A/B/C/I/Admiral), front- "
+            "and back-end loads, 12b-1 distribution fees, capital-gain "
+            "distributions and embedded unrealised gains (the silent tax "
+            "killers), manager tenure (Buffett's 10-year rule), active "
+            "share, persistence (top-quartile in N of last 5 years), "
+            "load-adjusted returns, and a fund-flavoured passive-investor "
+            "checklist + tailored educational tips."
+        ),
+        data_sources=(
+            "yfinance — mutual-fund metadata, NAV, distributions",
+            "ISIN / CUSIP lookup via yfinance Search",
+            "Yahoo Finance + Google News RSS — fund-level news",
+        ),
+    ),
+    Launchable(
+        name="Lynx Compare Fund",
+        short_name="Compare Fund",
+        kind=LaunchableKind.APP,
+        command="lynx-compare-fund",
+        package="lynx_compare_fund",
+        tagline="Side-by-side mutual / index fund comparison with winner per section",
+        description=(
+            "Compares two mutual / index funds head-to-head across "
+            "Costs (incl. loads & 12b-1), Income & Tax, Size & Liquidity, "
+            "Performance, Capture & Recovery, Diversification, Risk, "
+            "Tail Risk, and Tracking. Declares a winner per section plus "
+            "an overall winner and a Boglehead-style passive-investor verdict."
+        ),
+        category="Core",
+        modes=_ALL_MODES,
+        keybinding="M",
+        example_tickers=("VFIAX FXAIX", "VTSAX SWTSX", "VFINX FUSEX"),
+        color="bold green",
+        details=(
+            "Takes two fund tickers (or ISINs / CUSIPs) and runs the "
+            "lynx-fund pipeline on both, then diffs every metric and "
+            "every section to declare winners. Adds a Passive-Investor "
+            "Verdict that compares the two funds' Boglehead-style "
+            "checklist results to recommend the better leg for a "
+            "buy-and-hold investor.\n\n"
+            "Warns on active-vs-passive, UCITS, soft- / hard-close, and "
+            "distribution-policy mismatches. Ships a Flask REST API "
+            "(lynx-compare-fund-server) for integration."
+        ),
+        data_sources=(
+            "yfinance via lynx-fund — NAV, holdings, fund metadata",
+            "lynx-fund cache — reuses analyses from the fund tool",
+        ),
+    ),
+    Launchable(
+        name="Lynx Theme",
+        short_name="Theme",
+        kind=LaunchableKind.APP,
+        command="lynx-theme",
+        package="lynx_theme",
+        tagline="Visual theme editor — colours, fonts, emphasis (GUI + TUI)",
+        description=(
+            "Customise every styled area of the Suite — window, panels, "
+            "headings, metric labels and values, listed instruments, "
+            "warnings, errors, success rows, buttons, hero banner — with "
+            "live preview. Pick fonts, sizes, alignment, and bold / "
+            "italic / underline / blink / marquee flags. Save under any "
+            "name and set as the Suite default."
+        ),
+        category="Core",
+        modes=frozenset({"tui", "gui"}),
+        keybinding="t",
+        example_tickers=("lynx-mocha", "lynx-latte", "lynx-high-contrast"),
+        color="bold magenta",
+        # lynx-theme has no run-mode concept and no positional ticker.
+        run_mode_dialect="none",
+        accepts_identifier=False,
+        details=(
+            "lynx-theme is the only Suite app that runs exclusively in "
+            "graphical or TUI mode — by design, theme editing demands "
+            "live colour / font preview that the console can't deliver.\n\n"
+            "Built-in reference themes (lynx-mocha / lynx-latte / "
+            "lynx-high-contrast) are read-only — loading one always "
+            "starts a fresh copy under the name 'untitled'. Saved "
+            "themes live under $XDG_CONFIG_HOME/lynx-theme/themes/ and "
+            "any of them can be marked the default loaded by Suite "
+            "applications on startup."
+        ),
+        data_sources=(
+            "Local filesystem ($XDG_CONFIG_HOME/lynx-theme/themes/)",
+            "Built-in reference themes (lynx-mocha, lynx-latte, lynx-high-contrast)",
         ),
     ),
 )

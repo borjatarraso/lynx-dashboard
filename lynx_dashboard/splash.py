@@ -358,32 +358,39 @@ def _tui_splash_class():
 
         CSS = """
         Screen {
-            align: center middle;
             background: $surface;
+        }
+        #splash-outer {
+            align: center middle;
+            width: 100%;
+            height: 100%;
         }
         #splash-box {
             width: auto;
             height: auto;
             padding: 2 6;
             border: thick $primary;
-            content-align: center middle;
+            align: center middle;
         }
         #splash-logo {
             color: $success;
-            content-align: center middle;
+            text-align: center;
             margin-bottom: 1;
+            width: auto;
         }
         #splash-title {
             color: $primary;
             text-style: bold;
-            content-align: center middle;
+            text-align: center;
             margin-bottom: 0;
+            width: auto;
         }
         #splash-tagline {
             color: $text-muted;
             text-style: italic;
-            content-align: center middle;
+            text-align: center;
             margin-bottom: 2;
+            width: auto;
         }
         #splash-bar {
             width: 60;
@@ -391,19 +398,22 @@ def _tui_splash_class():
         }
         #splash-status {
             color: $text-muted;
-            content-align: center middle;
+            text-align: center;
+            width: auto;
         }
         #splash-suite {
             color: $accent;
             text-style: bold;
-            content-align: center middle;
+            text-align: center;
             margin-top: 2;
+            width: auto;
         }
         #splash-skip-hint {
             color: $text-muted;
             text-style: italic;
-            content-align: center middle;
+            text-align: center;
             margin-top: 1;
+            width: auto;
         }
         """
 
@@ -415,14 +425,17 @@ def _tui_splash_class():
 
         def compose(self) -> ComposeResult:
             logo = get_logo_ascii() or "L Y N X"
-            with Vertical(id="splash-box"):
-                yield Static(logo, id="splash-logo")
-                yield Static(APP_NAME, id="splash-title")
-                yield Static(APP_TAGLINE, id="splash-tagline")
-                yield ProgressBar(total=100, show_eta=False, show_percentage=False, id="splash-bar")
-                yield Static(_STATUS_STEPS[0], id="splash-status")
-                yield Static(SUITE_LABEL, id="splash-suite")
-                yield Static("Press any key to skip", id="splash-skip-hint")
+            # Outer wrapper centers the box in the viewport; inner box
+            # centers its children horizontally.
+            with Vertical(id="splash-outer"):
+                with Vertical(id="splash-box"):
+                    yield Static(logo, id="splash-logo")
+                    yield Static(APP_NAME, id="splash-title")
+                    yield Static(APP_TAGLINE, id="splash-tagline")
+                    yield ProgressBar(total=100, show_eta=False, show_percentage=False, id="splash-bar")
+                    yield Static(_STATUS_STEPS[0], id="splash-status")
+                    yield Static(SUITE_LABEL, id="splash-suite")
+                    yield Static("Press any key to skip", id="splash-skip-hint")
 
         def on_mount(self) -> None:
             self._start_monotonic = time.monotonic()

@@ -145,6 +145,13 @@ def build_parser() -> argparse.ArgumentParser:
         version=f"{APP_NAME} v{__version__} — part of {SUITE_LABEL}",
     )
     parser.add_argument("--about", action="store_true", help="Show about / license and exit")
+    # Shared --language flag (us / es / it / de / fr / fa).
+    try:
+        from lynx_investor_core.translations import add_language_argument
+        add_language_argument(parser)
+    except ImportError:
+        pass
+
     return parser
 
 
@@ -193,8 +200,15 @@ def _do_info(console: Console, args: argparse.Namespace) -> int:
 
 
 def _do_recommend(console: Console, args: argparse.Namespace) -> int:
-    rec = recommend_for_query(args.recommend, use_network=not args.offline)
-    _record_recommendation(args.recommend, rec)
+    query = (args.recommend or "").strip()
+    if not query:
+        console.print(
+            "[bold red]Error:[/] --recommend needs a non-empty ticker / "
+            "company name (e.g. --recommend AAPL)."
+        )
+        return 2
+    rec = recommend_for_query(query, use_network=not args.offline)
+    _record_recommendation(query, rec)
     if args.as_json:
         import json
         from lynx_dashboard.api import recommendation_as_dict
@@ -332,6 +346,11 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         pass  # argcomplete optional at runtime
 
     args = parser.parse_args(argv)
+    try:
+        from lynx_investor_core.translations import apply_args as _apply_lang
+        _apply_lang(args)
+    except ImportError:
+        pass
 
     # --debug / --verbose is a synonym for LYNX_DEBUG=1 — flips off the
     # stdout/stderr silencers in the recommender so yfinance/Rich output is
@@ -352,7 +371,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.info:
         return _do_info(console, args)
-    if args.recommend:
+    if args.recommend is not None:
         return _do_recommend(console, args)
     if args.launch:
         return _do_launch(console, args)

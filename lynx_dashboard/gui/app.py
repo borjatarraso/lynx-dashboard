@@ -61,6 +61,7 @@ from lynx_dashboard.launcher import (
 )
 from lynx_dashboard.recommender import recommend_for_query
 from lynx_dashboard.registry import AGENTS, APPS, Launchable
+from lynx_dashboard import icons as icon_gen
 
 
 # Root of the package — used to resolve img/*.png files the same way every
@@ -290,13 +291,20 @@ class DashboardGUI(tk.Tk):
         self._offline = offline
         self._dry_run = dry_run
         self._status_var = tk.StringVar()
+        # Ensure domain icons exist on disk; silently noops if PIL is missing.
+        try:
+            icon_gen.generate_all()
+        except Exception:
+            pass
+        # Hold PhotoImage refs so Tk doesn't garbage-collect them.
+        self._icon_images: dict[str, tk.PhotoImage] = {}
         # Lazy — constructed the first time Recommend dialog opens so tests
         # that construct DashboardGUI in a temp dir don't accidentally touch
         # the user's real history file.
         self._history: Optional[HistoryStore] = None
 
         self.title(APP_NAME)
-        self.geometry("1200x820")
+        self.geometry("1200x900")
         self.configure(bg=_PALETTE["bg"])
         self._apply_style()
         self._build_menu()
@@ -338,20 +346,20 @@ class DashboardGUI(tk.Tk):
             background=_PALETTE["bg_alt"],
             foreground=_PALETTE["accent"],
             font=("TkDefaultFont", 11, "bold"),
-            padding=(10, 8, 10, 2),
+            padding=(10, 4, 10, 1),
         )
         style.configure(
             "Tag.TLabel",
             background=_PALETTE["bg_alt"],
             foreground=_PALETTE["fg_dim"],
-            padding=(10, 0, 10, 6),
+            padding=(10, 0, 10, 2),
             wraplength=self._CARD_WIDTH - 20,
         )
 
         # Launch button — dark bg, light fg, and hover stays legible.
         style.configure(
             "Launch.TButton",
-            padding=(10, 7),
+            padding=(10, 4),
             background=_PALETTE["bg_alt"],
             foreground=_PALETTE["fg"],
             bordercolor=_PALETTE["accent"],
@@ -377,7 +385,7 @@ class DashboardGUI(tk.Tk):
         # Info button — compact, readable, purple accent.
         style.configure(
             "Info.TButton",
-            padding=(8, 6),
+            padding=(8, 4),
             background=_PALETTE["bg_alt"],
             foreground=_PALETTE["accent2"],
             font=("TkDefaultFont", 10, "bold"),
@@ -394,13 +402,14 @@ class DashboardGUI(tk.Tk):
             ],
         )
 
-        # Hero-level "Recommend" button — prominent.
+        # Hero-level "Recommend" button — prominent but compact (sits in the
+        # hero row, not its own bar).
         style.configure(
             "Recommend.TButton",
-            padding=(14, 10),
+            padding=(14, 6),
             background=_PALETTE["accent"],
             foreground=_PALETTE["bg"],
-            font=("TkDefaultFont", 11, "bold"),
+            font=("TkDefaultFont", 10, "bold"),
         )
         style.map(
             "Recommend.TButton",
@@ -540,28 +549,38 @@ class DashboardGUI(tk.Tk):
         container.pack(fill=tk.BOTH, expand=True)
 
         self._build_hero(container)
-        self._build_recommend_bar(container)
         self._build_grid_body(container)
         self._build_status_bar()
 
     def _build_hero(self, parent: ttk.Frame) -> None:
         hero = ttk.Frame(parent)
-        hero.pack(fill=tk.X, padx=14, pady=(14, 6))
+        hero.pack(fill=tk.X, padx=14, pady=(10, 6))
 
-        # Side-by-side layout: logo on the left, titles center-left, Quit
-        # button pinned to the top-right. The half-size logo (78×89) is the
-        # same toolbar-scale icon every other suite app uses in its header.
+        # Single hero row: logo — titles — (stretchable spacer for centering) —
+        # Recommend — Quit. The Recommend button sits between the titles and
+        # Quit, keeps its natural width, and is vertically centered in the
+        # row by pack's default anchor behaviour.
         row = ttk.Frame(hero)
         row.pack(fill=tk.X)
 
-        # Quit button — pack first with side=RIGHT so it always claims the
+        # Quit button — packed first with side=RIGHT so it always claims the
         # right edge regardless of logo/title widths.
         ttk.Button(
             row,
             text="Quit   (Ctrl+Q)",
             style="Quit.TButton",
             command=self._quit,
-        ).pack(side=tk.RIGHT, padx=(14, 0), pady=4)
+        ).pack(side=tk.RIGHT, padx=(10, 0), pady=4)
+
+        # Recommend button — packed with side=RIGHT AFTER Quit, so it lands
+        # just to the left of Quit. No `fill`, so it shrinks to the natural
+        # width of its text and pad — much less wide than before.
+        ttk.Button(
+            row,
+            text="🔍  Recommend an Agent   (Ctrl+R)",
+            style="Recommend.TButton",
+            command=self._open_recommend,
+        ).pack(side=tk.RIGHT, padx=(10, 10), pady=4)
 
         self._hero_logo_image = (
             _load_png(self, "logo_sm_half_green.png")
@@ -594,19 +613,9 @@ class DashboardGUI(tk.Tk):
         ttk.Label(titles, text=APP_TAGLINE, style="Sub.TLabel").pack(anchor="w")
         ttk.Label(titles, text=f"Part of {SUITE_LABEL}", style="Sub.TLabel").pack(anchor="w")
 
-    def _build_recommend_bar(self, parent: ttk.Frame) -> None:
-        bar = ttk.Frame(parent)
-        bar.pack(fill=tk.X, padx=14, pady=(4, 10))
-        ttk.Button(
-            bar,
-            text="🔍  Recommend an Agent for a Company   (Ctrl+R)",
-            style="Recommend.TButton",
-            command=self._open_recommend,
-        ).pack(fill=tk.X)
-
     def _build_grid_body(self, parent: ttk.Frame) -> None:
         outer = ttk.Frame(parent)
-        outer.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+        outer.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 2))
 
         canvas = tk.Canvas(outer, bg=_PALETTE["bg"], highlightthickness=0)
         # Scrollbar is packed on demand — only visible when the content
@@ -640,7 +649,7 @@ class DashboardGUI(tk.Tk):
         # keeps column widths locked even across the two section dividers,
         # so the three app buttons line up with the three-wide agent rows.
         grid = ttk.Frame(inner)
-        grid.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+        grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         for col in range(3):
             grid.columnconfigure(col, weight=1, uniform="launch-col", minsize=self._CARD_WIDTH)
 
@@ -648,7 +657,7 @@ class DashboardGUI(tk.Tk):
 
         # Core apps header + cards.
         ttk.Label(grid, text="Core Apps", style="Section.TLabel").grid(
-            row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(4, 6),
+            row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(2, 2),
         )
         row_cursor += 1
         for idx, item in enumerate(APPS):
@@ -657,24 +666,58 @@ class DashboardGUI(tk.Tk):
 
         # Agents header + cards.
         ttk.Label(grid, text="Sector-Specialized Agents", style="Section.TLabel").grid(
-            row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(16, 6),
+            row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(8, 2),
         )
         row_cursor += 1
         for idx, item in enumerate(AGENTS):
             self._build_card(grid, item, row=row_cursor + idx // 3, col=idx % 3)
 
+    def _load_icon(self, command: str) -> Optional[tk.PhotoImage]:
+        """Load (and cache) the PNG icon for *command*. Returns None on failure."""
+        if command in self._icon_images:
+            return self._icon_images[command]
+        try:
+            path = icon_gen.get_icon_path(command)
+        except Exception:
+            return None
+        if path is None or not path.exists():
+            return None
+        try:
+            img = tk.PhotoImage(master=self, file=str(path))
+        except tk.TclError:
+            return None
+        self._icon_images[command] = img
+        return img
+
     def _build_card(self, parent: ttk.Frame, item: Launchable, *, row: int, col: int) -> None:
         cell = ttk.Frame(parent, style="Alt.TFrame")
-        cell.grid(row=row, column=col, sticky="nsew", padx=6, pady=6)
+        cell.grid(row=row, column=col, sticky="nsew", padx=5, pady=4)
         cell.columnconfigure(0, weight=1)
         cell.columnconfigure(1, weight=0, minsize=100)
 
+        icon_img = self._load_icon(item.command)
+
+        # Name + tagline on the left; icon top-right, spanning both rows so
+        # the card height matches the pre-icon version — no extra row.
         ttk.Label(cell, text=item.name, style="Title.TLabel").grid(
-            row=0, column=0, columnspan=2, sticky="ew",
+            row=0, column=0, sticky="ew",
         )
         ttk.Label(cell, text=item.tagline, style="Tag.TLabel").grid(
-            row=1, column=0, columnspan=2, sticky="ew",
+            row=1, column=0, sticky="ew",
         )
+        if icon_img is not None:
+            icon_label = tk.Label(
+                cell,
+                image=icon_img,
+                bg=_PALETTE["bg_alt"],
+                borderwidth=0,
+                highlightthickness=0,
+            )
+            icon_label.grid(
+                row=0, column=1, rowspan=2,
+                sticky="ne",
+                padx=(4, 8), pady=(4, 0),
+            )
 
         key_hint = f"  [{_display_key(item.keybinding)}]" if item.keybinding else ""
         ttk.Button(
@@ -682,14 +725,14 @@ class DashboardGUI(tk.Tk):
             text=f"Launch {item.short_name}{key_hint}",
             style="Launch.TButton",
             command=lambda i=item: self._launch(i),
-        ).grid(row=2, column=0, sticky="ew", padx=(10, 4), pady=(2, 10))
+        ).grid(row=2, column=0, sticky="ew", padx=(10, 4), pady=(2, 6))
 
         ttk.Button(
             cell,
             text="ⓘ  Info",
             style="Info.TButton",
             command=lambda i=item: self._open_info(i),
-        ).grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(2, 10))
+        ).grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(2, 6))
 
     def _build_status_bar(self) -> None:
         status = ttk.Label(
