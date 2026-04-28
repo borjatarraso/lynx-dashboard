@@ -504,11 +504,11 @@ class DashboardGUI(tk.Tk):
         menubar = tk.Menu(self, **menu_opts)
         file_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
         file_menu.add_command(
-            label="Recommend agent for a company…   Ctrl+R",
+            label=_t("dash_recommend_label"),
             command=self._open_recommend,
         )
         file_menu.add_separator()
-        file_menu.add_command(label="Quit   Ctrl+Q", command=self._quit)
+        file_menu.add_command(label=_t("dash_quit_label"), command=self._quit)
         menubar.add_cascade(label=_t("menu_file"), menu=file_menu)
 
         launch_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
@@ -523,24 +523,24 @@ class DashboardGUI(tk.Tk):
                 label=f"{agent.name}   ({agent.command})",
                 command=lambda a=agent: self._launch(a),
             )
-        menubar.add_cascade(label="Launch", menu=launch_menu)
+        menubar.add_cascade(label=_t("menu_launch"), menu=launch_menu)
 
         view_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
-        view_menu.add_radiobutton(label="Launch children in TUI", variable=self._launch_mode, value="tui")
-        view_menu.add_radiobutton(label="Launch children in GUI", variable=self._launch_mode, value="gui")
-        view_menu.add_radiobutton(label="Launch children in interactive", variable=self._launch_mode, value="interactive")
-        view_menu.add_radiobutton(label="Launch children in console", variable=self._launch_mode, value="console")
+        view_menu.add_radiobutton(label=_t("dash_launch_in_tui"), variable=self._launch_mode, value="tui")
+        view_menu.add_radiobutton(label=_t("dash_launch_in_gui"), variable=self._launch_mode, value="gui")
+        view_menu.add_radiobutton(label=_t("dash_launch_in_interactive"), variable=self._launch_mode, value="interactive")
+        view_menu.add_radiobutton(label=_t("dash_launch_in_console"), variable=self._launch_mode, value="console")
         view_menu.add_separator()
-        view_menu.add_radiobutton(label="Production mode", variable=self._run_mode, value="production")
-        view_menu.add_radiobutton(label="Testing mode", variable=self._run_mode, value="testing")
-        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_radiobutton(label=_t("dash_mode_production"), variable=self._run_mode, value="production")
+        view_menu.add_radiobutton(label=_t("dash_mode_testing"), variable=self._run_mode, value="testing")
+        menubar.add_cascade(label=_t("menu_view"), menu=view_menu)
 
         help_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
-        help_menu.add_command(label="Keybindings…   F1", command=self._open_keys)
-        help_menu.add_command(label="About…", command=self._open_about)
+        help_menu.add_command(label=_t("dash_keys_label"), command=self._open_keys)
+        help_menu.add_command(label=_t("dash_about_label"), command=self._open_about)
         # Easter egg is intentionally NOT listed here. It's still reachable
         # through the hidden trigger documented in docs/KEYBINDINGS.md.
-        menubar.add_cascade(label="Help", menu=help_menu)
+        menubar.add_cascade(label=_t("menu_help"), menu=help_menu)
 
         self.config(menu=menubar)
 
@@ -569,7 +569,7 @@ class DashboardGUI(tk.Tk):
         # right edge regardless of logo/title widths.
         ttk.Button(
             row,
-            text="Quit   (Ctrl+Q)",
+            text=_t("dash_quit_hero"),
             style="Quit.TButton",
             command=self._quit,
         ).pack(side=tk.RIGHT, padx=(10, 0), pady=4)
@@ -579,7 +579,7 @@ class DashboardGUI(tk.Tk):
         # width of its text and pad — much less wide than before.
         ttk.Button(
             row,
-            text="🔍  Recommend an Agent   (Ctrl+R)",
+            text=_t("dash_recommend_hero"),
             style="Recommend.TButton",
             command=self._open_recommend,
         ).pack(side=tk.RIGHT, padx=(10, 10), pady=4)
@@ -613,7 +613,8 @@ class DashboardGUI(tk.Tk):
         titles.pack(side=tk.LEFT, anchor="w", fill=tk.X, expand=True)
         ttk.Label(titles, text=APP_NAME, style="Hero.TLabel").pack(anchor="w")
         ttk.Label(titles, text=APP_TAGLINE, style="Sub.TLabel").pack(anchor="w")
-        ttk.Label(titles, text=f"Part of {SUITE_LABEL}", style="Sub.TLabel").pack(anchor="w")
+        ttk.Label(titles, text=_t("part_of_suite").format(suite=SUITE_LABEL),
+                  style="Sub.TLabel").pack(anchor="w")
 
     def _build_grid_body(self, parent: ttk.Frame) -> None:
         outer = ttk.Frame(parent)
@@ -658,7 +659,7 @@ class DashboardGUI(tk.Tk):
         row_cursor = 0
 
         # Core apps header + cards.
-        ttk.Label(grid, text="Core Apps", style="Section.TLabel").grid(
+        ttk.Label(grid, text=_t("dash_section_apps"), style="Section.TLabel").grid(
             row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(2, 2),
         )
         row_cursor += 1
@@ -667,7 +668,7 @@ class DashboardGUI(tk.Tk):
         row_cursor += (len(APPS) + 2) // 3
 
         # Agents header + cards.
-        ttk.Label(grid, text="Sector-Specialized Agents", style="Section.TLabel").grid(
+        ttk.Label(grid, text=_t("dash_section_agents"), style="Section.TLabel").grid(
             row=row_cursor, column=0, columnspan=3, sticky="w", padx=6, pady=(8, 2),
         )
         row_cursor += 1
@@ -724,14 +725,14 @@ class DashboardGUI(tk.Tk):
         key_hint = f"  [{_display_key(item.keybinding)}]" if item.keybinding else ""
         ttk.Button(
             cell,
-            text=f"Launch {item.short_name}{key_hint}",
+            text=_t("dash_card_launch").format(name=item.short_name, key=key_hint),
             style="Launch.TButton",
             command=lambda i=item: self._launch(i),
         ).grid(row=2, column=0, sticky="ew", padx=(10, 4), pady=(2, 6))
 
         ttk.Button(
             cell,
-            text="ⓘ  Info",
+            text=_t("dash_card_info"),
             style="Info.TButton",
             command=lambda i=item: self._open_info(i),
         ).grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(2, 6))
@@ -752,9 +753,10 @@ class DashboardGUI(tk.Tk):
         # raises if we touch a StringVar on a dead interpreter.
         try:
             self._status_var.set(
-                f"Launch mode: {self._launch_mode.get()}     "
-                f"Run mode: {self._run_mode.get()}     "
-                f"Ctrl+R recommend  •  Ctrl+Q quit  •  F1 keys"
+                _t("dash_status").format(
+                    launch=self._launch_mode.get(),
+                    run=self._run_mode.get(),
+                )
             )
         except tk.TclError:
             pass
@@ -932,8 +934,8 @@ class DashboardGUI(tk.Tk):
         self._dialog_buttons(
             win,
             [
-                ("View License…", lambda: self._open_license_modal(about)),
-                ("Close (Esc)", win.destroy),
+                (_t("dash_btn_view_license"), lambda: self._open_license_modal(about)),
+                (_t("dash_btn_close_esc"), win.destroy),
             ],
         )
 
@@ -963,14 +965,17 @@ class DashboardGUI(tk.Tk):
         ).pack(pady=(0, 2))
         tk.Label(
             banner,
-            text=f"Version {about['version']}   ·   Part of {about['suite']} v{about['suite_version']}",
+            text=f"{_t('version')} {about['version']}   ·   "
+                 + _t('part_of_suite').format(suite=about['suite'])
+                 + f" v{about['suite_version']}",
             bg=_PALETTE["bg"],
             fg=_PALETTE["fg_dim"],
             font=("TkDefaultFont", 10),
         ).pack()
         tk.Label(
             banner,
-            text=f"Released {about['year']}   ·   {about['license']}",
+            text=_t('released_year').format(year=about['year'])
+                 + f"   ·   {about['license']}",
             bg=_PALETTE["bg"],
             fg=_PALETTE["fg_dim"],
             font=("TkDefaultFont", 10),
@@ -996,9 +1001,9 @@ class DashboardGUI(tk.Tk):
                 font=("TkDefaultFont", 10),
             ).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        _row("Developed by", about["author"])
-        _row("Contact",      about["email"])
-        _row("License",      f"{about['license_name']} ({about['license']})")
+        _row(_t("developed_by_dash"), about["author"])
+        _row(_t("contact_dash"),      about["email"])
+        _row(_t("license_dash"),      f"{about['license_name']} ({about['license']})")
 
         tk.Label(
             body, text=about["description"],
@@ -1034,9 +1039,10 @@ class DashboardGUI(tk.Tk):
         bind_tk_paging(win, text)
 
     def _open_keys(self) -> None:
-        win = self._modal("Keybindings", width=680, height=580, resizable=False)
+        win = self._modal(_t("dash_keys_label").split("…")[0].strip(),
+                          width=680, height=580, resizable=False)
         # Pack the button bar FIRST so it reliably claims the bottom strip.
-        self._dialog_buttons(win, [("Close (Esc)", win.destroy)])
+        self._dialog_buttons(win, [(_t("dash_btn_close_esc"), win.destroy)])
         body = tk.Text(
             win,
             bg=_PALETTE["bg_alt"],
@@ -1057,15 +1063,15 @@ class DashboardGUI(tk.Tk):
             body.insert(tk.END, f"  {key:<12}", "key")
             body.insert(tk.END, f"  {text}\n", "text")
 
-        body.insert(tk.END, "Global\n", "head")
-        row("Ctrl+R", "Recommend agent for a company")
-        row("Ctrl+Q", "Quit")
-        row("F1 / ?", "This help")
-        row("Esc", "Close dialog")
-        body.insert(tk.END, "\nCore apps\n", "head")
+        body.insert(tk.END, _t("dash_keys_global") + "\n", "head")
+        row("Ctrl+R", _t("dash_key_recommend"))
+        row("Ctrl+Q", _t("dash_key_quit"))
+        row("F1 / ?", _t("dash_key_help"))
+        row("Esc", _t("dash_key_close"))
+        body.insert(tk.END, "\n" + _t("dash_keys_core_apps") + "\n", "head")
         for app in APPS:
             row(f"[{_display_key(app.keybinding)}]", f"{app.name}   ({app.command})")
-        body.insert(tk.END, "\nSector agents\n", "head")
+        body.insert(tk.END, "\n" + _t("dash_keys_sector_agents") + "\n", "head")
         for agent in AGENTS:
             row(f"[{_display_key(agent.keybinding)}]", f"{agent.name}   ({agent.command})")
         body.configure(state=tk.DISABLED)
@@ -1101,11 +1107,11 @@ class DashboardGUI(tk.Tk):
             win,
             [
                 (
-                    f"Launch {item.short_name}{label_suffix}",
+                    _t("dash_btn_launch_target").format(name=item.short_name, ticker=label_suffix),
                     lambda: (win.destroy(), self._launch(item, ticker=ticker)),
                 ),
-                ("Copy command", _copy_cmd),
-                ("Close (Esc)", win.destroy),
+                (_t("dash_btn_copy_command"), _copy_cmd),
+                (_t("dash_btn_close_esc"), win.destroy),
             ],
         )
         body = tk.Text(
@@ -1130,27 +1136,27 @@ class DashboardGUI(tk.Tk):
         body.insert(tk.END, f"{item.name}\n", "title")
         body.insert(tk.END, f"{item.tagline}\n\n", "tag")
 
-        body.insert(tk.END, "What it does\n", "head")
+        body.insert(tk.END, _t("dash_info_what_does") + "\n", "head")
         body.insert(tk.END, (item.details or item.description) + "\n\n", "body")
 
         if item.data_sources:
-            body.insert(tk.END, "Data sources\n", "head")
+            body.insert(tk.END, _t("dash_info_data_sources") + "\n", "head")
             for source in item.data_sources:
                 body.insert(tk.END, f"  • {source}\n", "bullet")
             body.insert(tk.END, "\n")
 
         if item.specialization:
-            body.insert(tk.END, "What makes it specialized\n", "head")
+            body.insert(tk.END, _t("dash_info_specialization") + "\n", "head")
             body.insert(tk.END, item.specialization + "\n\n", "body")
 
-        body.insert(tk.END, "At a glance\n", "head")
-        body.insert(tk.END, f"  Command:       {item.command}\n", "bullet")
-        body.insert(tk.END, f"  Package:       {item.package}\n", "bullet")
-        body.insert(tk.END, f"  Keybinding:    {_display_key(item.keybinding) or '—'}\n", "bullet")
+        body.insert(tk.END, _t("dash_info_at_a_glance") + "\n", "head")
+        body.insert(tk.END, f"  {_t('dash_info_command'):<14} {item.command}\n", "bullet")
+        body.insert(tk.END, f"  {_t('dash_info_package'):<14} {item.package}\n", "bullet")
+        body.insert(tk.END, f"  {_t('dash_info_keybinding'):<14} {_display_key(item.keybinding) or '—'}\n", "bullet")
         modes = ", ".join(sorted(item.modes)) if item.modes else "—"
-        body.insert(tk.END, f"  Modes:         {modes}\n", "bullet")
+        body.insert(tk.END, f"  {_t('dash_info_modes'):<14} {modes}\n", "bullet")
         if item.example_tickers:
-            body.insert(tk.END, f"  Try it with:   {', '.join(item.example_tickers)}\n", "bullet")
+            body.insert(tk.END, f"  {_t('dash_info_try_with'):<14} {', '.join(item.example_tickers)}\n", "bullet")
         body.configure(state=tk.DISABLED)
 
     def _open_easter(self) -> None:
@@ -1175,16 +1181,16 @@ class DashboardGUI(tk.Tk):
         body.configure(state=tk.DISABLED)
 
     def _open_recommend(self) -> None:
-        win = self._modal("Recommend agent", width=760, height=620)
+        win = self._modal(_t("dash_recommend_title"), width=760, height=620)
 
         header = ttk.Frame(win, style="Alt.TFrame")
         header.pack(fill=tk.X, padx=0, pady=0)
-        ttk.Label(header, text="Recommend an agent for a company", style="Hero.TLabel").pack(
+        ttk.Label(header, text=_t("dash_recommend_title"), style="Hero.TLabel").pack(
             anchor="w", padx=18, pady=(16, 2),
         )
         ttk.Label(
             header,
-            text="Enter a ticker, ISIN, or company name. Press Enter.",
+            text=_t("dash_recommend_hint"),
             style="Sub.TLabel",
         ).pack(anchor="w", padx=18, pady=(0, 10))
 
@@ -1202,7 +1208,7 @@ class DashboardGUI(tk.Tk):
         # of the recommender has a quick "try me" the user can click.
         samples = ttk.Frame(win)
         samples.pack(fill=tk.X, padx=18, pady=(0, 4))
-        ttk.Label(samples, text="Try:", style="Sub.TLabel").pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Label(samples, text=_t("dash_recommend_try"), style="Sub.TLabel").pack(side=tk.LEFT, padx=(0, 6))
         for sample in _recommend_samples():
             ttk.Button(
                 samples, text=sample, style="Pill.TButton",
@@ -1217,7 +1223,7 @@ class DashboardGUI(tk.Tk):
         if recent_queries:
             recent = ttk.Frame(win)
             recent.pack(fill=tk.X, padx=18, pady=(0, 10))
-            ttk.Label(recent, text="Recent:", style="Sub.TLabel").pack(side=tk.LEFT, padx=(0, 6))
+            ttk.Label(recent, text=_t("dash_recommend_recent"), style="Sub.TLabel").pack(side=tk.LEFT, padx=(0, 6))
             for past in recent_queries:
                 ttk.Button(
                     recent, text=past, style="Pill.TButton",
@@ -1257,7 +1263,7 @@ class DashboardGUI(tk.Tk):
         button_row.pack(side=tk.BOTTOM, fill=tk.X, padx=18, pady=(0, 14))
         launch_btn = ttk.Button(
             button_row,
-            text="Launch top pick",
+            text=_t("dash_btn_launch_top"),
             style="Launch.TButton",
             state=tk.DISABLED,
             command=lambda: state["primary"] and (
@@ -1267,7 +1273,7 @@ class DashboardGUI(tk.Tk):
         )
         info_btn = ttk.Button(
             button_row,
-            text="ⓘ Info on top pick",
+            text=_t("dash_btn_info_top"),
             style="Info.TButton",
             state=tk.DISABLED,
             command=lambda: state["primary"] and self._open_info(
@@ -1275,7 +1281,7 @@ class DashboardGUI(tk.Tk):
             ),
         )
         close_btn = ttk.Button(
-            button_row, text="Close (Esc)", style="Dialog.TButton", command=win.destroy,
+            button_row, text=_t("dash_btn_close_esc"), style="Dialog.TButton", command=win.destroy,
         )
         launch_btn.pack(side=tk.LEFT, padx=(0, 8))
         info_btn.pack(side=tk.LEFT, padx=(0, 8))
@@ -1289,8 +1295,10 @@ class DashboardGUI(tk.Tk):
             # take 2-5 s for uncommon names like "Oroco" or "F3 Uranium".
             result.configure(state=tk.NORMAL)
             result.delete("1.0", tk.END)
-            result.insert(tk.END, f"Searching Yahoo Finance for {query!r}…\n", "dim")
-            result.insert(tk.END, "\n(This can take a few seconds for names / ISINs.)", "dim")
+            result.insert(tk.END,
+                          _t("dash_recommend_searching").format(q=repr(query)) + "\n",
+                          "dim")
+            result.insert(tk.END, "\n" + _t("dash_recommend_searching_hint"), "dim")
             result.configure(state=tk.DISABLED)
             launch_btn.configure(state=tk.DISABLED)
             info_btn.configure(state=tk.DISABLED)
@@ -1314,11 +1322,11 @@ class DashboardGUI(tk.Tk):
             # Reflect the company in the button label so the user sees
             # *what* will be analyzed.
             if rec.primary is not None and state["ticker"]:
-                launch_btn.configure(text=f"Launch top pick   ({state['ticker']})")
-                info_btn.configure(text=f"ⓘ Info on top pick   ({state['ticker']})")
+                launch_btn.configure(text=f"{_t('dash_btn_launch_top')}   ({state['ticker']})")
+                info_btn.configure(text=f"{_t('dash_btn_info_top')}   ({state['ticker']})")
             else:
-                launch_btn.configure(text="Launch top pick")
-                info_btn.configure(text="ⓘ Info on top pick")
+                launch_btn.configure(text=_t("dash_btn_launch_top"))
+                info_btn.configure(text=_t("dash_btn_info_top"))
             result.configure(state=tk.NORMAL)
             result.delete("1.0", tk.END)
             result.insert(tk.END, f"{rec.query}\n", "title")
@@ -1335,14 +1343,14 @@ class DashboardGUI(tk.Tk):
             if rec.has_match:
                 primary = rec.primary
                 assert primary is not None
-                result.insert(tk.END, "Top pick\n", "head")
+                result.insert(tk.END, _t("dash_top_pick") + "\n", "head")
                 result.insert(tk.END, f"  {primary.name}", "hit")
                 result.insert(tk.END, f"   ({primary.command})\n", "dim")
                 result.insert(tk.END, f"  {primary.tagline}\n", "body")
                 if primary.specialization:
                     result.insert(tk.END, f"  → {primary.specialization}\n", "body")
                 if rec.alternates:
-                    result.insert(tk.END, "\nAlso relevant\n", "head")
+                    result.insert(tk.END, "\n" + _t("dash_also_relevant") + "\n", "head")
                     for alt in rec.alternates:
                         result.insert(tk.END, f"  • {alt.name} ({alt.command}) — {alt.tagline}\n", "body")
             else:
