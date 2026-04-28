@@ -39,6 +39,8 @@ is still alive and focused.
 
 from __future__ import annotations
 
+
+from lynx_investor_core.translations import t as _t
 import os
 import shlex
 import shutil
@@ -507,7 +509,7 @@ class DashboardGUI(tk.Tk):
         )
         file_menu.add_separator()
         file_menu.add_command(label="Quit   Ctrl+Q", command=self._quit)
-        menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label=_t("menu_file"), menu=file_menu)
 
         launch_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
         for app in APPS:
