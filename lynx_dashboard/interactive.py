@@ -28,7 +28,18 @@ from lynx_dashboard.display import (
 from lynx_dashboard.easter import pick_easter_egg
 from lynx_dashboard.launcher import LaunchRequest, build_command, format_command, launch_blocking
 from lynx_dashboard.recommender import recommend_for_query
-from lynx_dashboard.registry import ALL_LAUNCHABLES, AGENTS, APPS, Launchable, by_name
+from lynx_dashboard.registry import (
+    ALL_LAUNCHABLES,
+    AGENTS,
+    APPS,
+    Launchable,
+    by_name,
+    display_description,
+    display_details,
+    display_name,
+    display_specialization,
+    display_tagline,
+)
 
 console = Console()
 
@@ -203,17 +214,17 @@ def run_interactive(default_mode: str = "interactive", run_mode: str = "producti
 def _render_info(item: Launchable) -> None:
     """Print the detailed info block for a launchable."""
     parts: list[str] = [
-        f"[bold blue]{item.name}[/]  [italic {item.color}]— {item.tagline}[/]",
+        f"[bold blue]{display_name(item)}[/]  [italic {item.color}]— {display_tagline(item)}[/]",
         "",
         "[bold magenta]What it does[/]",
-        item.details or item.description,
+        display_details(item) or display_description(item),
     ]
     if item.data_sources:
         parts.extend(["", "[bold magenta]Data sources[/]"])
         for source in item.data_sources:
             parts.append(f"  • {source}")
     if item.specialization:
-        parts.extend(["", "[bold magenta]What makes it specialized[/]", item.specialization])
+        parts.extend(["", "[bold magenta]What makes it specialized[/]", display_specialization(item)])
     parts.extend(
         [
             "",
@@ -226,7 +237,7 @@ def _render_info(item: Launchable) -> None:
     )
     if item.example_tickers:
         parts.append(f"  Try with:   {', '.join(item.example_tickers)}")
-    console.print(Panel("\n".join(parts), border_style=item.color, title=f"[bold]Info — {item.name}[/]"))
+    console.print(Panel("\n".join(parts), border_style=item.color, title=f"[bold]Info — {display_name(item)}[/]"))
 
 
 def _do_launch(target, state: dict, ticker) -> None:

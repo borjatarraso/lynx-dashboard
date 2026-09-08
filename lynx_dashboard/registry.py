@@ -25,6 +25,13 @@ __all__ = [
     "by_registry_name",
     "apps_for_mode",
     "agents_for_mode",
+    "display_name",
+    "display_short_name",
+    "display_tagline",
+    "display_description",
+    "display_details",
+    "display_specialization",
+    "display_category",
 ]
 
 
@@ -851,3 +858,61 @@ def apps_for_mode(mode: str) -> Tuple[Launchable, ...]:
 
 def agents_for_mode(mode: str) -> Tuple[Launchable, ...]:
     return tuple(a for a in AGENTS if a.supports(mode))
+
+
+# ---------------------------------------------------------------------------
+# Translation helpers
+# ---------------------------------------------------------------------------
+#
+# The dataclass attributes (name, tagline, description, …) carry the English
+# source. UI surfaces should call ``display_*()`` so that, when a contributor
+# drops a translation file into ``lynx_investor_core/locales/extensive/``,
+# the dashboard automatically picks it up. Missing keys fall back to the
+# inline English exactly as before.
+
+def _command_slug(command: str) -> str:
+    """Map ``lynx-compare-fund`` → ``compare_fund`` for translation keys."""
+    return command.removeprefix("lynx-").replace("-", "_")
+
+
+def _category_slug(category: str) -> str:
+    return category.lower().replace(" ", "_").replace("-", "_")
+
+
+def _t_or(key: str, fallback: str) -> str:
+    """Wrapper around ``translations.t`` that can't crash the registry import."""
+    try:
+        from lynx_investor_core.translations import t as _t
+    except Exception:
+        return fallback
+    return _t(key, default=fallback)
+
+
+def display_name(item: Launchable) -> str:
+    return _t_or(f"dash_app_{_command_slug(item.command)}_name", item.name)
+
+
+def display_short_name(item: Launchable) -> str:
+    return _t_or(f"dash_app_{_command_slug(item.command)}_short", item.short_name)
+
+
+def display_tagline(item: Launchable) -> str:
+    return _t_or(f"dash_app_{_command_slug(item.command)}_tagline", item.tagline)
+
+
+def display_description(item: Launchable) -> str:
+    return _t_or(f"dash_app_{_command_slug(item.command)}_description", item.description)
+
+
+def display_details(item: Launchable) -> str:
+    return _t_or(f"dash_app_{_command_slug(item.command)}_details", item.details)
+
+
+def display_specialization(item: Launchable) -> str:
+    return _t_or(
+        f"dash_app_{_command_slug(item.command)}_specialization", item.specialization
+    )
+
+
+def display_category(category: str) -> str:
+    return _t_or(f"dash_category_{_category_slug(category)}", category)

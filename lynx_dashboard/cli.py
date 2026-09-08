@@ -30,7 +30,7 @@ from lynx_dashboard.launcher import (
     launch_blocking,
 )
 from lynx_dashboard.recommender import recommend_for_query
-from lynx_dashboard.registry import ALL_LAUNCHABLES, by_name
+from lynx_dashboard.registry import ALL_LAUNCHABLES, by_name, display_name, display_tagline
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -174,7 +174,7 @@ def _print_list(console: Console, *, as_json: bool = False) -> None:
     for item in ALL_LAUNCHABLES:
         console.print(
             f"{item.kind}\t{item.keybinding or '-'}\t{item.command}\t"
-            f"{item.name}\t{item.tagline}"
+            f"{display_name(item)}\t{display_tagline(item)}"
         )
 
 

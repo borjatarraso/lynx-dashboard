@@ -39,6 +39,11 @@ from textual.widgets import (
 )
 
 from lynx_investor_core.about import about_static_text
+from lynx_investor_core.debounce import (
+    DEFAULT_COOLDOWN_MS,
+    LAUNCH_COOLDOWN_MS,
+    ClickDebouncer,
+)
 from lynx_investor_core.pager import PagingAppMixin, tui_paging_bindings
 
 from lynx_dashboard import APP_NAME, get_about_text, get_logo_ascii
@@ -50,7 +55,19 @@ from lynx_dashboard.launcher import (
     launch_blocking,
 )
 from lynx_dashboard.recommender import recommend_for_query
-from lynx_dashboard.registry import AGENTS, APPS, ALL_LAUNCHABLES, Launchable, by_name
+from lynx_dashboard.registry import (
+    AGENTS,
+    APPS,
+    ALL_LAUNCHABLES,
+    Launchable,
+    by_name,
+    display_description,
+    display_details,
+    display_name,
+    display_short_name,
+    display_specialization,
+    display_tagline,
+)
 
 
 def _display_key(key: Optional[str]) -> str:
@@ -68,11 +85,11 @@ class LaunchIntent(NamedTuple):
 def _info_body(item: Launchable) -> str:
     """Rich-markup body for the Info modal. Shared by TUI modal + inline pane."""
     lines = [
-        f"[bold blue]{item.name}[/]",
-        f"[italic {item.color}]{item.tagline}[/]",
+        f"[bold blue]{display_name(item)}[/]",
+        f"[italic {item.color}]{display_tagline(item)}[/]",
         "",
         "[bold magenta]What it does[/]",
-        item.details or item.description,
+        display_details(item) or display_description(item),
     ]
     if item.data_sources:
         lines.extend(["", "[bold magenta]Data sources[/]"])
@@ -83,7 +100,7 @@ def _info_body(item: Launchable) -> str:
             [
                 "",
                 "[bold magenta]What makes it specialized[/]",
-                item.specialization,
+                display_specialization(item),
             ]
         )
     lines.extend(
@@ -191,11 +208,11 @@ class InfoModal(ModalScreen[Optional[LaunchIntent]]):
         self._ticker = ticker
 
     def compose(self) -> ComposeResult:
-        launch_label = f"Launch {self._item.short_name}"
+        launch_label = f"Launch {display_short_name(self._item)}"
         if self._ticker:
             launch_label += f"   ({self._ticker})"
         with Vertical(id="info-dialog", classes="dialog"):
-            yield Label(f"[bold blue]{self._item.name}[/]", id="info-title")
+            yield Label(f"[bold blue]{display_name(self._item)}[/]", id="info-title")
             yield VerticalScroll(
                 Static(_info_body(self._item), id="info-content"),
                 id="info-scroll",
@@ -505,6 +522,12 @@ class DashboardApp(PagingAppMixin, App):
         # by the tab's Launch button to jump straight into the right agent
         # with the resolved company loaded.
         self._inline_recommendation: Optional[LaunchIntent] = None
+        # Debounce for action buttons / keys / menu items so a frantic
+        # double-press can't fire the same action twice. The TUI launches
+        # children synchronously inside `app.suspend()`, so the gate
+        # mostly protects modal-opening actions; the launch path is
+        # naturally serial but we still gate it for symmetry.
+        self._click_gate = ClickDebouncer(cooldown_ms=DEFAULT_COOLDOWN_MS)
 
     # -- layout --------------------------------------------------------
 
@@ -580,8 +603,8 @@ class DashboardApp(PagingAppMixin, App):
             table.add_row(
                 _display_key(item.keybinding),
                 icon_glyph(item.command),
-                f"[bold {item.color}]{item.name}[/]",
-                item.tagline,
+                f"[bold {item.color}]{display_name(item)}[/]",
+                display_tagline(item),
                 item.command,
                 key=item.command,
             )
@@ -619,12 +642,19 @@ class DashboardApp(PagingAppMixin, App):
     # -- actions -------------------------------------------------------
 
     def action_about(self) -> None:
+        if not self._click_gate.allow("modal:about"):
+            return
         self.push_screen(AboutModal())
 
     def action_keys(self) -> None:
+        if not self._click_gate.allow("modal:keys"):
+            return
         self.push_screen(KeybindingsModal())
 
     def action_recommend(self) -> None:
+        if not self._click_gate.allow("modal:recommend"):
+            return
+
         def _after(intent: Optional[LaunchIntent]) -> None:
             if intent is not None:
                 self._launch(intent.target, ticker=intent.ticker)
@@ -668,6 +698,9 @@ class DashboardApp(PagingAppMixin, App):
         return None
 
     def _show_info(self, item: Launchable, *, ticker: Optional[str] = None) -> None:
+        if not self._click_gate.allow(f"modal:info:{item.command}:{ticker or ''}"):
+            return
+
         def _after(intent: Optional[LaunchIntent]) -> None:
             if intent is not None:
                 self._launch(intent.target, ticker=intent.ticker)
@@ -789,6 +822,11 @@ class DashboardApp(PagingAppMixin, App):
     # -- core launch -------------------------------------------------
 
     def _launch(self, target: Launchable, *, ticker: Optional[str] = None) -> None:
+        # Swallow rapid duplicate triggers (Enter held, double-tap on a
+        # touchpad button, button click + key both bound).
+        gate_key = f"launch:{target.command}:{ticker or ''}:{self._launch_mode}"
+        if not self._click_gate.allow(gate_key, cooldown_ms=LAUNCH_COOLDOWN_MS):
+            return
         if not target.supports(self._launch_mode):
             self.notify(
                 f"{target.name} has no {self._launch_mode} mode — press 'm' to cycle.",

@@ -13,7 +13,16 @@ from rich.table import Table
 from rich.text import Text
 
 from lynx_dashboard.recommender import Recommendation
-from lynx_dashboard.registry import AGENTS, APPS, Launchable
+from lynx_dashboard.registry import (
+    AGENTS,
+    APPS,
+    Launchable,
+    display_description,
+    display_details,
+    display_name,
+    display_specialization,
+    display_tagline,
+)
 
 __all__ = [
     "render_banner",
@@ -30,17 +39,17 @@ __all__ = [
 def render_info(item: Launchable) -> Panel:
     """Detailed info panel for a single launchable — used by --info and REPL."""
     parts = [
-        f"[bold blue]{item.name}[/]  [italic {item.color}]— {item.tagline}[/]",
+        f"[bold blue]{display_name(item)}[/]  [italic {item.color}]— {display_tagline(item)}[/]",
         "",
         "[bold magenta]What it does[/]",
-        item.details or item.description,
+        display_details(item) or display_description(item),
     ]
     if item.data_sources:
         parts.extend(["", "[bold magenta]Data sources[/]"])
         for source in item.data_sources:
             parts.append(f"  • {source}")
     if item.specialization:
-        parts.extend(["", "[bold magenta]What makes it specialized[/]", item.specialization])
+        parts.extend(["", "[bold magenta]What makes it specialized[/]", display_specialization(item)])
     keybinding = item.keybinding
     key_display = "-" if keybinding == "minus" else (keybinding or "—")
     parts.extend(
@@ -58,7 +67,7 @@ def render_info(item: Launchable) -> Panel:
     return Panel(
         "\n".join(parts),
         border_style=item.color,
-        title=f"[bold]Info — {item.name}[/]",
+        title=f"[bold]Info — {display_name(item)}[/]",
     )
 
 
@@ -80,8 +89,8 @@ def _launchable_row(item: Launchable) -> Sequence[str]:
     key = item.keybinding or "-"
     return (
         f"[bold]{key}[/]",
-        f"[bold {item.color}]{item.name}[/]",
-        item.tagline,
+        f"[bold {item.color}]{display_name(item)}[/]",
+        display_tagline(item),
         item.command,
     )
 

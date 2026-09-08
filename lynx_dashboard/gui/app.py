@@ -50,6 +50,11 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Iterable, List, NamedTuple, Optional, Tuple
 
+from lynx_investor_core.debounce import (
+    DEFAULT_COOLDOWN_MS,
+    LAUNCH_COOLDOWN_MS,
+    ClickDebouncer,
+)
 from lynx_investor_core.pager import bind_tk_paging
 
 from lynx_dashboard import APP_NAME, APP_TAGLINE, SUITE_LABEL, get_about_text, get_logo_ascii
@@ -62,7 +67,17 @@ from lynx_dashboard.launcher import (
     launch_detached,
 )
 from lynx_dashboard.recommender import recommend_for_query
-from lynx_dashboard.registry import AGENTS, APPS, Launchable
+from lynx_dashboard.registry import (
+    AGENTS,
+    APPS,
+    Launchable,
+    display_description,
+    display_details,
+    display_name,
+    display_short_name,
+    display_specialization,
+    display_tagline,
+)
 from lynx_dashboard import icons as icon_gen
 
 
@@ -300,6 +315,11 @@ class DashboardGUI(tk.Tk):
             pass
         # Hold PhotoImage refs so Tk doesn't garbage-collect them.
         self._icon_images: dict[str, tk.PhotoImage] = {}
+        # Per-key cooldown for buttons & menu items. Each gated callback
+        # (Launch, Recommend, Info, About, Keys, …) runs at most once
+        # per cooldown window so a frantic double-click can't spawn two
+        # subprocesses or two modals.
+        self._click_gate = ClickDebouncer(cooldown_ms=DEFAULT_COOLDOWN_MS)
         # Lazy — constructed the first time Recommend dialog opens so tests
         # that construct DashboardGUI in a temp dir don't accidentally touch
         # the user's real history file.
@@ -702,10 +722,10 @@ class DashboardGUI(tk.Tk):
 
         # Name + tagline on the left; icon top-right, spanning both rows so
         # the card height matches the pre-icon version — no extra row.
-        ttk.Label(cell, text=item.name, style="Title.TLabel").grid(
+        ttk.Label(cell, text=display_name(item), style="Title.TLabel").grid(
             row=0, column=0, sticky="ew",
         )
-        ttk.Label(cell, text=item.tagline, style="Tag.TLabel").grid(
+        ttk.Label(cell, text=display_tagline(item), style="Tag.TLabel").grid(
             row=1, column=0, sticky="ew",
         )
         if icon_img is not None:
@@ -725,7 +745,7 @@ class DashboardGUI(tk.Tk):
         key_hint = f"  [{_display_key(item.keybinding)}]" if item.keybinding else ""
         ttk.Button(
             cell,
-            text=_t("dash_card_launch").format(name=item.short_name, key=key_hint),
+            text=_t("dash_card_launch").format(name=display_short_name(item), key=key_hint),
             style="Launch.TButton",
             command=lambda i=item: self._launch(i),
         ).grid(row=2, column=0, sticky="ew", padx=(10, 4), pady=(2, 6))
@@ -862,6 +882,12 @@ class DashboardGUI(tk.Tk):
         resolved Yahoo symbol is threaded in here so the child app runs
         its analysis for that company straight away — no re-typing.
         """
+        # Swallow rapid duplicate clicks. The detached-GUI path returns
+        # immediately, so without this gate a triple-click on "Launch
+        # Portfolio" used to spawn three windows.
+        gate_key = f"launch:{target.command}:{ticker or ''}:{self._launch_mode.get()}"
+        if not self._click_gate.allow(gate_key, cooldown_ms=LAUNCH_COOLDOWN_MS):
+            return
         mode = self._launch_mode.get()
         if not target.supports(mode):
             self._show_message(
@@ -922,6 +948,8 @@ class DashboardGUI(tk.Tk):
     # ---- dialogs ----------------------------------------------------
 
     def _open_about(self) -> None:
+        if not self._click_gate.allow("modal:about"):
+            return
         about = get_about_text()
         # Width/height sized so every line fits on one screen without a
         # vertical scrollbar — small logo + compact metadata + wrapped
@@ -1039,6 +1067,8 @@ class DashboardGUI(tk.Tk):
         bind_tk_paging(win, text)
 
     def _open_keys(self) -> None:
+        if not self._click_gate.allow("modal:keys"):
+            return
         win = self._modal(_t("dash_keys_label").split("…")[0].strip(),
                           width=680, height=580, resizable=False)
         # Pack the button bar FIRST so it reliably claims the bottom strip.
@@ -1083,8 +1113,10 @@ class DashboardGUI(tk.Tk):
         resolving a company), the dialog's Launch button auto-analyzes
         that company instead of launching the agent empty.
         """
+        if not self._click_gate.allow(f"modal:info:{item.command}:{ticker or ''}"):
+            return
         label_suffix = f"   ({ticker})" if ticker else ""
-        win = self._modal(f"Info — {item.name}", width=780, height=640)
+        win = self._modal(f"Info — {display_name(item)}", width=780, height=640)
 
         # "Copy command" puts the exact shell command the dashboard would run
         # onto the system clipboard — useful for users who want to run in
@@ -1107,7 +1139,7 @@ class DashboardGUI(tk.Tk):
             win,
             [
                 (
-                    _t("dash_btn_launch_target").format(name=item.short_name, ticker=label_suffix),
+                    _t("dash_btn_launch_target").format(name=display_short_name(item), ticker=label_suffix),
                     lambda: (win.destroy(), self._launch(item, ticker=ticker)),
                 ),
                 (_t("dash_btn_copy_command"), _copy_cmd),
@@ -1133,11 +1165,11 @@ class DashboardGUI(tk.Tk):
         body.tag_configure("dim", foreground=_PALETTE["fg_dim"], font=("TkDefaultFont", 10))
         body.pack(fill=tk.BOTH, expand=True)
 
-        body.insert(tk.END, f"{item.name}\n", "title")
-        body.insert(tk.END, f"{item.tagline}\n\n", "tag")
+        body.insert(tk.END, f"{display_name(item)}\n", "title")
+        body.insert(tk.END, f"{display_tagline(item)}\n\n", "tag")
 
         body.insert(tk.END, _t("dash_info_what_does") + "\n", "head")
-        body.insert(tk.END, (item.details or item.description) + "\n\n", "body")
+        body.insert(tk.END, (display_details(item) or display_description(item)) + "\n\n", "body")
 
         if item.data_sources:
             body.insert(tk.END, _t("dash_info_data_sources") + "\n", "head")
@@ -1147,7 +1179,7 @@ class DashboardGUI(tk.Tk):
 
         if item.specialization:
             body.insert(tk.END, _t("dash_info_specialization") + "\n", "head")
-            body.insert(tk.END, item.specialization + "\n\n", "body")
+            body.insert(tk.END, display_specialization(item) + "\n\n", "body")
 
         body.insert(tk.END, _t("dash_info_at_a_glance") + "\n", "head")
         body.insert(tk.END, f"  {_t('dash_info_command'):<14} {item.command}\n", "bullet")
@@ -1160,6 +1192,8 @@ class DashboardGUI(tk.Tk):
         body.configure(state=tk.DISABLED)
 
     def _open_easter(self) -> None:
+        if not self._click_gate.allow("modal:easter"):
+            return
         win = self._modal("", width=620, height=460, resizable=False)
         # Buttons first; content fills above.
         self._dialog_buttons(win, [("Close (Esc)", win.destroy)])
@@ -1181,6 +1215,8 @@ class DashboardGUI(tk.Tk):
         body.configure(state=tk.DISABLED)
 
     def _open_recommend(self) -> None:
+        if not self._click_gate.allow("modal:recommend"):
+            return
         win = self._modal(_t("dash_recommend_title"), width=760, height=620)
 
         header = ttk.Frame(win, style="Alt.TFrame")
@@ -1344,15 +1380,15 @@ class DashboardGUI(tk.Tk):
                 primary = rec.primary
                 assert primary is not None
                 result.insert(tk.END, _t("dash_top_pick") + "\n", "head")
-                result.insert(tk.END, f"  {primary.name}", "hit")
+                result.insert(tk.END, f"  {display_name(primary)}", "hit")
                 result.insert(tk.END, f"   ({primary.command})\n", "dim")
-                result.insert(tk.END, f"  {primary.tagline}\n", "body")
+                result.insert(tk.END, f"  {display_tagline(primary)}\n", "body")
                 if primary.specialization:
-                    result.insert(tk.END, f"  → {primary.specialization}\n", "body")
+                    result.insert(tk.END, f"  → {display_specialization(primary)}\n", "body")
                 if rec.alternates:
                     result.insert(tk.END, "\n" + _t("dash_also_relevant") + "\n", "head")
                     for alt in rec.alternates:
-                        result.insert(tk.END, f"  • {alt.name} ({alt.command}) — {alt.tagline}\n", "body")
+                        result.insert(tk.END, f"  • {display_name(alt)} ({alt.command}) — {display_tagline(alt)}\n", "body")
             else:
                 result.insert(tk.END, rec.reason + "\n", "body")
             result.insert(tk.END, f"\n{rec.reason}\n", "dim")
