@@ -2,12 +2,12 @@
 ep_version: 1
 project: lynx-dashboard
 title: Lynx Dashboard
-status: PAUSED
-last_touched: 2026-06-15
-last_touched_text: 15 June 2026
+status: IDLE
+last_touched: 2026-08-15
+last_touched_text: 15 August 2026
 section: sub
 category: investments
-generated: 2026-08-15
+generated: 2026-09-08
 ep_locked: false   # set true and this file is never regenerated
 ---
 
@@ -15,7 +15,7 @@ ep_locked: false   # set true and this file is never regenerated
 
 > Dashboard / launcher for all sub-projects + agents
 
-🟠 **PAUSED** · last touched **15 June 2026** (last commit)
+🟡 **IDLE** · last touched **15 August 2026** (last commit)
 
 ---
 
@@ -76,6 +76,7 @@ Key modules:
 
 ```bash
 cd ~/claude/lince-investor/lynx-dashboard
+./run                                 # project runner
 lynx-dashboard                        # console entry point
 python3 -m lynx_dashboard             # runnable package
 ```
@@ -115,4 +116,4 @@ python3 -m lynx_dashboard             # runnable package
 Part of the LINCE company · © All rights reserved
 
 
-<sub>Standard entry-point card (`index.ep.md`, format v1) — generated 2026-08-15 by Lynx Factory. Regenerating overwrites this file unless `ep_locked: true`.</sub>
+<sub>Standard entry-point card (`index.ep.md`, format v1) — generated 2026-09-08 by Lynx Factory. Regenerating overwrites this file unless `ep_locked: true`.</sub>

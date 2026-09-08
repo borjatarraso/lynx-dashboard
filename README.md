@@ -194,6 +194,18 @@ signature in its footer. The shipped logo PNGs additionally carry the
 author's signature via steganography for provenance — please do not
 replace or re-encode the logo files.
 
+## Run it
+
+```bash
+./run                      # the lynx-dashboard command; first run builds .venv
+```
+
+## Documentation
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — module map and data flow
+- [`ROADMAP.md`](ROADMAP.md) — current direction and open threads
+- [`CHANGELOG.md`](CHANGELOG.md) — what changed, by version
+
 <!-- LYNX-EP-FOOTER:BEGIN -->
 
 ---
@@ -202,7 +214,7 @@ replace or re-encode the logo files.
 
 New here, or coming back after a while? Read [`index.ep.md`](index.ep.md) (or open [`index.ep.html`](index.ep.html) in a browser) — the standard card that answers what this is, where to look first, and how to run it, in the same shape for every project.
 
-🟠 **PAUSED** · last touched **15 June 2026**
+🟡 **IDLE** · last touched **15 August 2026**
 
 ## Ownership
 
