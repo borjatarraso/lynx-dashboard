@@ -214,7 +214,7 @@ replace or re-encode the logo files.
 
 New here, or coming back after a while? Read [`index.ep.md`](index.ep.md) (or open [`index.ep.html`](index.ep.html) in a browser) — the standard card that answers what this is, where to look first, and how to run it, in the same shape for every project.
 
-🟡 **IDLE** · last touched **15 August 2026**
+🟢 **ACTIVE** · last touched **8 September 2026**
 
 ## Ownership
 

@@ -2,9 +2,9 @@
 ep_version: 1
 project: lynx-dashboard
 title: Lynx Dashboard
-status: IDLE
-last_touched: 2026-08-15
-last_touched_text: 15 August 2026
+status: ACTIVE
+last_touched: 2026-09-08
+last_touched_text: 8 September 2026
 section: sub
 category: investments
 generated: 2026-09-08
@@ -15,7 +15,7 @@ ep_locked: false   # set true and this file is never regenerated
 
 > Dashboard / launcher for all sub-projects + agents
 
-🟡 **IDLE** · last touched **15 August 2026** (last commit)
+🟢 **ACTIVE** · last touched **8 September 2026** (last commit to project files)
 
 ---
 
