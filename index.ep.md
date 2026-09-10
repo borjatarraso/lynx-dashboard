@@ -75,7 +75,7 @@ Key modules:
 ## Run it
 
 ```bash
-cd ~/claude/lince-investor/lynx-dashboard
+cd ~/devel/lince-investor/lynx-dashboard
 ./run                                 # project runner
 lynx-dashboard                        # console entry point
 python3 -m lynx_dashboard             # runnable package
