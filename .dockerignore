@@ -12,3 +12,9 @@ data_test/
 docs/*.html
 img/
 tests/
+
+# local project notes (untracked) — never in an image
+INDEX.md
+DESCRIPTION.md
+USERGUIDE.md
+BACKLOG.md
