@@ -8,6 +8,13 @@ sector-specialized agent, suggests the right agent for any company you type
 in, and launches any of them in the same interface mode you used to enter
 the dashboard.
 
+## Quick install
+
+```bash
+make    # create .venv and install the package + its dependencies
+./run   # start with the defaults
+```
+
 ## What's inside
 
 | Core app          | What it does                                        |
